@@ -126,6 +126,16 @@ export default function (pi: ExtensionAPI) {
             stdio: ["ignore", "pipe", "pipe"],
           });
 
+          // 10 min timeout for a child process.
+          killTimer = setTimeout(() => {
+            if (!settled) {
+              child.kill("SIGTERM");
+              killTimer = setTimeout(() => {
+                if (!settled) child.kill("SIGKILL");
+              }, 3000);
+            }
+          }, 600000);
+
           const finish = (value: {
             code: number | null;
             signal: NodeJS.Signals | null;
@@ -164,7 +174,7 @@ export default function (pi: ExtensionAPI) {
               try {
                 const event = JSON.parse(line) as JsonEvent;
                 const text = extractText(event);
-                if (text) output = text;
+                if (text) output = output ? `${output}\n${text}` : text;
               } catch {
                 // Ignore non-JSON stdout lines; JSON mode normally emits JSONL.
               }
@@ -191,7 +201,7 @@ export default function (pi: ExtensionAPI) {
               try {
                 const event = JSON.parse(stdoutBuffer) as JsonEvent;
                 const text = extractText(event);
-                if (text) output = text;
+                if (text) output = output ? `${output}\n${text}` : text;
               } catch {
                 // Ignore an incomplete/non-JSON trailing line.
               }

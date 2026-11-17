@@ -35,7 +35,12 @@ export default function (pi: ExtensionAPI) {
       if (entry.isDirectory()) {
         result.push(...await discover(fullPath));
       } else if (entry.name === "SKILL.md") {
-        const content = await readFile(fullPath, "utf8");
+        let content: string;
+        try {
+          content = await readFile(fullPath, "utf8");
+        } catch {
+          continue;
+        }
         const frontmatter = content.match(/^---\s*\n([\s\S]*?)\n---/);
 
         if (!frontmatter) continue;
